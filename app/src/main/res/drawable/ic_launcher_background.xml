@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 背景グラデーション（中央が明るい青、外側が深い紺） -->
+    <path android:pathData="M0,0H108V108H0Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="62"
+                android:startColor="#1E88E5"
+                android:endColor="#0D47A1" />
+        </aapt:attr>
+    </path>
+
+    <!-- 右下にさりげない光の反射 -->
+    <path android:pathData="M70,80 L108,60 L108,108 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="90"
+                android:startY="65"
+                android:endX="108"
+                android:endY="108"
+                android:startColor="#0A1565C0"
+                android:endColor="#00000000" />
+        </aapt:attr>
+    </path>
+
+</vector>

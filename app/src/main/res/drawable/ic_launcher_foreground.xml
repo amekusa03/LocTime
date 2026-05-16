@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+        デザイン: 場所ピン型の時計
+        ・ピンの頭部 = 時計文字盤（場所＋時間を一体表現）
+        ・針は 10:10（左右対称で安定感、笑顔のような配置）
+    -->
+
+    <!-- 白いロケーションピン本体（ティアドロップ形） -->
+    <!-- 円の中心: (54, 46), 半径: 23, 先端: (54, 82) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,82 C46,74 31,62 31,46 A23,23 0 0,1 77,46 C77,62 62,74 54,82 Z" />
+
+    <!-- 時計文字盤（背景色と合わせた濃い青 = ピンを貫く「窓」のように見せる） -->
+    <path
+        android:fillColor="#0D47A1"
+        android:pathData="M54,46 m-18,0 a18,18 0 1,0 36,0 a18,18 0 1,0 -36,0" />
+
+    <!-- 時計の縁（白い細いリング） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M54,46 m-15,0 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0" />
+
+    <!-- 目盛り：12時 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,31 L54,34" />
+
+    <!-- 目盛り：3時 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M69,46 L66,46" />
+
+    <!-- 目盛り：6時 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,61 L54,58" />
+
+    <!-- 目盛り：9時 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M39,46 L42,46" />
+
+    <!-- 時針：10時10分の位置（10時方向, 約305°） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M54,46 L47,41" />
+
+    <!-- 分針：10時10分の位置（2時方向, 60°） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M54,46 L64,40" />
+
+    <!-- 中心ドット -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,46 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" />
+
+</vector>

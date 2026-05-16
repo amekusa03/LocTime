@@ -1,0 +1,72 @@
+package com.kusa.loctime.receiver
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.location.Location
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.kusa.loctime.data.db.AppDatabase
+import com.kusa.loctime.service.AlarmScheduler
+import com.kusa.loctime.service.NotificationHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+class AlarmReceiver : BroadcastReceiver() {
+
+    companion object {
+        const val EXTRA_ENTRY_ID = "entry_id"
+        const val EXTRA_LOCATION_ID = "location_id"
+        const val EXTRA_MESSAGE = "message"
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        val entryId = intent.getIntExtra(EXTRA_ENTRY_ID, -1)
+        val locationId = intent.getIntExtra(EXTRA_LOCATION_ID, -1)
+        val message = intent.getStringExtra(EXTRA_MESSAGE) ?: return
+        if (entryId == -1 || locationId == -1) return
+
+        val pending = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val db = AppDatabase.getInstance(context)
+                val locationEntity = db.locationDao().getById(locationId) ?: return@launch
+                val entry = db.timeEntryDao().getById(entryId) ?: return@launch
+                if (!entry.isEnabled) return@launch
+
+                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+                val currentLocation: Location? = try {
+                    val cts = CancellationTokenSource()
+                    fusedClient.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        cts.token
+                    ).await()
+                } catch (e: SecurityException) {
+                    null
+                }
+
+                if (currentLocation != null) {
+                    val results = FloatArray(1)
+                    Location.distanceBetween(
+                        currentLocation.latitude, currentLocation.longitude,
+                        locationEntity.latitude, locationEntity.longitude,
+                        results
+                    )
+                    if (results[0] <= locationEntity.radiusMeters) {
+                        NotificationHelper.showNotification(
+                            context, entryId, locationEntity.name, message
+                        )
+                    }
+                }
+
+                // 翌日同時刻に再スケジュール
+                AlarmScheduler.schedule(context, entry)
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+}
