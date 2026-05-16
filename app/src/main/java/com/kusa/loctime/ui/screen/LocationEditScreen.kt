@@ -2,6 +2,8 @@ package com.kusa.loctime.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -26,8 +28,11 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.kusa.loctime.data.entity.LocationEntity
 import com.kusa.loctime.data.entity.TimeEntryEntity
 import com.kusa.loctime.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +49,21 @@ fun LocationEditScreen(
     var lat by remember { mutableStateOf("") }
     var lon by remember { mutableStateOf("") }
     var radius by remember { mutableStateOf("200") }
-    var savedLocationId by remember { mutableIntStateOf(locationId) }
-    var locationSaved by remember { mutableStateOf(!isNew) }
+    var originalName by remember { mutableStateOf("") }
+    var originalLat by remember { mutableStateOf("") }
+    var originalLon by remember { mutableStateOf("") }
+    var originalRadius by remember { mutableStateOf("200") }
     var gettingLocation by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+
+    val isDirty = if (isNew) {
+        name.isNotBlank() || lat.isNotBlank() || lon.isNotBlank()
+    } else {
+        name != originalName || lat != originalLat || lon != originalLon || radius != originalRadius
+    }
+    var address by remember { mutableStateOf("") }
+    var addressSearching by remember { mutableStateOf(false) }
+    var addressError by remember { mutableStateOf("") }
 
     val locations by viewModel.locations.collectAsState()
     LaunchedEffect(locations) {
@@ -56,13 +73,59 @@ fun LocationEditScreen(
                 lat = it.latitude.toString()
                 lon = it.longitude.toString()
                 radius = it.radiusMeters.toInt().toString()
+                originalName = it.name
+                originalLat = it.latitude.toString()
+                originalLon = it.longitude.toString()
+                originalRadius = it.radiusMeters.toInt().toString()
             }
         }
     }
 
-    val timeEntries by viewModel.getTimeEntriesFlow(savedLocationId).collectAsState(emptyList())
+    val timeEntries by viewModel.getTimeEntriesFlow(locationId).collectAsState(emptyList())
     var showTimeDialog by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<TimeEntryEntity?>(null) }
+
+    BackHandler(enabled = isDirty) {
+        showDiscardDialog = true
+    }
+
+    fun saveAndBack() {
+        val latD = lat.toDoubleOrNull() ?: return
+        val lonD = lon.toDoubleOrNull() ?: return
+        val radF = radius.toFloatOrNull() ?: 200f
+        val entity = LocationEntity(
+            id = if (isNew) 0 else locationId,
+            name = name.trim(),
+            latitude = latD,
+            longitude = lonD,
+            radiusMeters = radF
+        )
+        viewModel.saveLocation(entity) { onBack() }
+    }
+
+    fun searchAddress() {
+        addressSearching = true
+        addressError = ""
+        scope.launch {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val results = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocationName(address.trim(), 1)
+                }
+                if (!results.isNullOrEmpty()) {
+                    lat = results[0].latitude.toString()
+                    lon = results[0].longitude.toString()
+                } else {
+                    addressError = "住所が見つかりませんでした"
+                }
+            } catch (e: Exception) {
+                addressError = "検索に失敗しました"
+            } finally {
+                addressSearching = false
+            }
+        }
+    }
 
     fun fetchCurrentLocation() {
         gettingLocation = true
@@ -107,116 +170,126 @@ fun LocationEditScreen(
             TopAppBar(
                 title = { Text(if (isNew) "場所を追加" else "場所を編集") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (isDirty) showDiscardDialog = true else onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
             )
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                Text("場所情報", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("場所名") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                Text(
+                    "場所情報",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = lat,
-                        onValueChange = { lat = it },
-                        label = { Text("緯度") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = lon,
-                        onValueChange = { lon = it },
-                        label = { Text("経度") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
-            }
-            item {
-                OutlinedTextField(
-                    value = radius,
-                    onValueChange = { radius = it },
-                    label = { Text("半径 (m)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = { onGetCurrentLocation() },
-                        modifier = Modifier.weight(1f),
-                        enabled = !gettingLocation
+                Spacer(Modifier.height(6.dp))
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (gettingLocation) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text("現在地を取得")
-                    }
-                    Button(
-                        onClick = {
-                            val latD = lat.toDoubleOrNull() ?: return@Button
-                            val lonD = lon.toDoubleOrNull() ?: return@Button
-                            val radF = radius.toFloatOrNull() ?: 200f
-                            val entity = LocationEntity(
-                                id = if (isNew) 0 else locationId,
-                                name = name.trim(),
-                                latitude = latD,
-                                longitude = lonD,
-                                radiusMeters = radF
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("場所名") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = address,
+                                onValueChange = { address = it; addressError = "" },
+                                label = { Text("住所") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                isError = addressError.isNotEmpty()
                             )
-                            viewModel.saveLocation(entity) { newId ->
-                                if (isNew && !locationSaved) {
-                                    savedLocationId = newId.toInt()
-                                    locationSaved = true
+                            OutlinedButton(
+                                onClick = { searchAddress() },
+                                enabled = address.isNotBlank() && !addressSearching
+                            ) {
+                                if (addressSearching) {
+                                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Text("検索")
                                 }
                             }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = name.isNotBlank() && lat.isNotBlank() && lon.isNotBlank()
-                    ) {
-                        Text("保存")
+                        }
+                        if (addressError.isNotEmpty()) {
+                            Text(
+                                addressError,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = lat,
+                                onValueChange = { lat = it },
+                                label = { Text("緯度") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = lon,
+                                onValueChange = { lon = it },
+                                label = { Text("経度") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                        }
+                        OutlinedTextField(
+                            value = radius,
+                            onValueChange = { radius = it },
+                            label = { Text("半径 (m)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        FilledTonalButton(
+                            onClick = { onGetCurrentLocation() },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !gettingLocation
+                        ) {
+                            if (gettingLocation) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text("現在地を取得")
+                        }
                     }
                 }
             }
 
-            if (locationSaved) {
+            if (!isNew) {
                 item {
-                    Spacer(Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             "時刻設定",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(
+                        FilledTonalIconButton(
                             onClick = { editingEntry = null; showTimeDialog = true },
                             enabled = timeEntries.size < 5
                         ) {
@@ -241,17 +314,45 @@ fun LocationEditScreen(
                     )
                 }
             }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Button(
+                        onClick = { saveAndBack() },
+                        enabled = name.isNotBlank() && lat.isNotBlank() && lon.isNotBlank()
+                    ) {
+                        Text("保存")
+                    }
+                }
+            }
         }
     }
 
     if (showTimeDialog) {
         TimeEntryDialog(
             entry = editingEntry,
-            locationId = savedLocationId,
+            locationId = locationId,
             onDismiss = { showTimeDialog = false },
             onSave = { entry ->
                 viewModel.saveTimeEntry(entry)
                 showTimeDialog = false
+            }
+        )
+    }
+
+    if (showDiscardDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text("確認") },
+            text = { Text("保存されていません。設定値を破棄しますか？") },
+            confirmButton = {
+                TextButton(onClick = { showDiscardDialog = false; onBack() }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) { Text("いいえ") }
             }
         )
     }
@@ -264,18 +365,19 @@ private fun TimeEntryItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
+    ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onEdit
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "%02d:%02d".format(entry.hour, entry.minute),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 if (entry.message.isNotBlank()) {
                     Text(entry.message, style = MaterialTheme.typography.bodySmall)

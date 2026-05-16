@@ -28,8 +28,10 @@ fun LocationListScreen(
     Scaffold(
         topBar = { TopAppBar(title = { Text("LocTime") }) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "場所を追加")
+            if (locations.size < 10) {
+                FloatingActionButton(onClick = onAddClick) {
+                    Icon(Icons.Default.Add, contentDescription = "場所を追加")
+                }
             }
         }
     ) { padding ->
