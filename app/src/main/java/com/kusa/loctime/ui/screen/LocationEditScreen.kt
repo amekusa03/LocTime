@@ -34,6 +34,11 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
+// 場所の追加・編集画面。locationId=-1 なら新規追加、それ以外なら既存の場所を編集する。
+// 画面の構成:
+//   - 場所情報カード（場所名・住所検索・緯度経度・半径・現在地取得）
+//   - 時刻設定セクション（場所情報が入力済みのとき表示）
+//   - 保存ボタン
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationEditScreen(
@@ -41,7 +46,9 @@ fun LocationEditScreen(
     viewModel: MainViewModel,
     onBack: () -> Unit
 ) {
-    val isNew = locationId == -1
+    // 新規作成時に「+」を押すと場所を自動保存してIDが確定するため、mutableState で管理する
+    var currentLocationId by remember { mutableIntStateOf(locationId) }
+    val isNew = currentLocationId == -1
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -56,6 +63,7 @@ fun LocationEditScreen(
     var gettingLocation by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
 
+    // 未保存の変更があるかどうか。新規は何か入力していれば dirty、既存は初期値と差分があれば dirty とする。
     val isDirty = if (isNew) {
         name.isNotBlank() || lat.isNotBlank() || lon.isNotBlank()
     } else {
@@ -65,10 +73,12 @@ fun LocationEditScreen(
     var addressSearching by remember { mutableStateOf(false) }
     var addressError by remember { mutableStateOf("") }
 
+    // 既存の場所の場合、DBから取得した値をフォームに初期表示する。
+    // name.isEmpty() チェックにより、初回のみ読み込んでユーザー入力を上書きしないようにする。
     val locations by viewModel.locations.collectAsState()
     LaunchedEffect(locations) {
         if (!isNew && name.isEmpty()) {
-            locations.find { it.id == locationId }?.let {
+            locations.find { it.id == currentLocationId }?.let {
                 name = it.name
                 lat = it.latitude.toString()
                 lon = it.longitude.toString()
@@ -81,7 +91,7 @@ fun LocationEditScreen(
         }
     }
 
-    val timeEntries by viewModel.getTimeEntriesFlow(locationId).collectAsState(emptyList())
+    val timeEntries by viewModel.getTimeEntriesFlow(currentLocationId).collectAsState(emptyList())
     var showTimeDialog by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<TimeEntryEntity?>(null) }
 
@@ -89,12 +99,13 @@ fun LocationEditScreen(
         showDiscardDialog = true
     }
 
+    // 入力内容を保存して前の画面に戻る。lat/lon が数値でない場合は何もしない。
     fun saveAndBack() {
         val latD = lat.toDoubleOrNull() ?: return
         val lonD = lon.toDoubleOrNull() ?: return
         val radF = radius.toFloatOrNull() ?: 200f
         val entity = LocationEntity(
-            id = if (isNew) 0 else locationId,
+            id = if (currentLocationId == -1) 0 else currentLocationId,
             name = name.trim(),
             latitude = latD,
             longitude = lonD,
@@ -103,6 +114,7 @@ fun LocationEditScreen(
         viewModel.saveLocation(entity) { onBack() }
     }
 
+    // 住所文字列をジオコーダで緯度経度に変換してフォームに反映する。
     fun searchAddress() {
         addressSearching = true
         addressError = ""
@@ -127,6 +139,7 @@ fun LocationEditScreen(
         }
     }
 
+    // FusedLocationProvider でGPS位置情報を取得してフォームに反映する。
     fun fetchCurrentLocation() {
         gettingLocation = true
         scope.launch {
@@ -138,7 +151,7 @@ fun LocationEditScreen(
                 ).await()
                 loc?.let { lat = it.latitude.toString(); lon = it.longitude.toString() }
             } catch (e: SecurityException) {
-                // 権限なし
+                // 権限なし（ここでは無視。権限リクエストは onGetCurrentLocation で行う）
             } finally {
                 gettingLocation = false
             }
@@ -277,7 +290,8 @@ fun LocationEditScreen(
                 }
             }
 
-            if (!isNew) {
+            val saveEnabled = name.isNotBlank() && lat.isNotBlank() && lon.isNotBlank()
+            if (!isNew || saveEnabled) {
                 item {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -290,15 +304,37 @@ fun LocationEditScreen(
                             modifier = Modifier.weight(1f)
                         )
                         FilledTonalIconButton(
-                            onClick = { editingEntry = null; showTimeDialog = true },
-                            enabled = timeEntries.size < 5
+                            onClick = {
+                                if (isNew) {
+                                    // 新規場所はIDが未確定のため、時刻追加の前に場所を先に保存する。
+                                    // 保存完了後に currentLocationId を更新し、ダイアログを開く。
+                                    val latD = lat.toDoubleOrNull() ?: return@FilledTonalIconButton
+                                    val lonD = lon.toDoubleOrNull() ?: return@FilledTonalIconButton
+                                    val radF = radius.toFloatOrNull() ?: 200f
+                                    val entity = LocationEntity(0, name.trim(), latD, lonD, radF)
+                                    viewModel.saveLocation(entity) { savedId ->
+                                        currentLocationId = savedId.toInt()
+                                        // originalXxx を更新して isDirty が false になるようにする
+                                        originalName = name
+                                        originalLat = lat
+                                        originalLon = lon
+                                        originalRadius = radius
+                                        editingEntry = null
+                                        showTimeDialog = true
+                                    }
+                                } else {
+                                    editingEntry = null
+                                    showTimeDialog = true
+                                }
+                            },
+                            enabled = timeEntries.size < 10
                         ) {
                             Icon(Icons.Default.Add, contentDescription = "時刻を追加")
                         }
                     }
-                    if (timeEntries.size >= 5) {
+                    if (timeEntries.size >= 10) {
                         Text(
-                            "時刻は最大5件まで",
+                            "時刻は最大10件まで",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -334,7 +370,7 @@ fun LocationEditScreen(
     if (showTimeDialog) {
         TimeEntryDialog(
             entry = editingEntry,
-            locationId = locationId,
+            locationId = currentLocationId,
             onDismiss = { showTimeDialog = false },
             onSave = { entry ->
                 viewModel.saveTimeEntry(entry)
@@ -358,6 +394,7 @@ fun LocationEditScreen(
     }
 }
 
+// 時刻一覧の1行分のUI。カードをタップすると編集ダイアログが開く。
 @Composable
 private fun TimeEntryItem(
     entry: TimeEntryEntity,
@@ -391,6 +428,7 @@ private fun TimeEntryItem(
     }
 }
 
+// 時刻の追加・編集ダイアログ。entry=null なら新規追加、それ以外なら既存の編集。
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimeEntryDialog(

@@ -17,10 +17,15 @@ import com.kusa.loctime.ui.screen.LocationListScreen
 import com.kusa.loctime.ui.theme.LocTimeTheme
 import com.kusa.loctime.ui.viewmodel.MainViewModel
 
+// アプリのエントリポイント。Navigation Compose で画面遷移を管理する。
+// 画面構成:
+//   "locations"       → LocationListScreen（場所一覧）
+//   "location/{id}"  → LocationEditScreen（場所編集）  id=-1 なら新規追加
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
+    // Android 13以上では通知権限（POST_NOTIFICATIONS）の実行時リクエストが必要
     private val notifPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
@@ -28,6 +33,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // 通知チャンネルをアプリ起動時に作成する（Android 8.0以上で必須）
         NotificationHelper.createChannel(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

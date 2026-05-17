@@ -3,11 +3,12 @@ package com.kusa.loctime.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+// 登録する「場所」を表すデータクラス。Roomデータベースの "locations" テーブルに対応する。
 @Entity(tableName = "locations")
 data class LocationEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val name: String,
-    val latitude: Double,
-    val longitude: Double,
-    val radiusMeters: Float = 200f
+    @PrimaryKey(autoGenerate = true) val id: Int = 0, // 自動採番のID（新規登録時は0を渡す）
+    val name: String,          // 場所名（例: 自宅、会社）
+    val latitude: Double,      // 緯度
+    val longitude: Double,     // 経度
+    val radiusMeters: Float = 200f // 判定する半径（メートル）。デフォルト200m
 )

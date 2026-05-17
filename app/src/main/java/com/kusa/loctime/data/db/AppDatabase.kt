@@ -7,6 +7,8 @@ import androidx.room.RoomDatabase
 import com.kusa.loctime.data.entity.LocationEntity
 import com.kusa.loctime.data.entity.TimeEntryEntity
 
+// Roomデータベースの定義クラス。アプリ全体で1つのインスタンスを共有する（シングルトン）。
+// version を上げるときはマイグレーション処理が必要になる。
 @Database(
     entities = [LocationEntity::class, TimeEntryEntity::class],
     version = 1,
@@ -19,6 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile private var instance: AppDatabase? = null
 
+        // スレッドセーフなシングルトン取得。@Volatile + synchronized で二重チェックロックを実現する。
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(

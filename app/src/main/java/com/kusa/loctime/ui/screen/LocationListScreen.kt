@@ -16,18 +16,21 @@ import androidx.compose.ui.Modifier
 import com.kusa.loctime.data.entity.LocationEntity
 import com.kusa.loctime.ui.viewmodel.MainViewModel
 
+// 登録済み場所の一覧を表示する画面。
+// 場所が10件に達すると FAB（追加ボタン）が非表示になる。
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationListScreen(
     viewModel: MainViewModel,
-    onLocationClick: (Int) -> Unit,
-    onAddClick: () -> Unit
+    onLocationClick: (Int) -> Unit, // 場所をタップしたときのコールバック（編集画面へ遷移）
+    onAddClick: () -> Unit          // FAB タップ時のコールバック（新規追加画面へ遷移）
 ) {
     val locations by viewModel.locations.collectAsState()
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("LocTime") }) },
         floatingActionButton = {
+            // 場所が最大10件に達したら追加ボタンを非表示にする
             if (locations.size < 10) {
                 FloatingActionButton(onClick = onAddClick) {
                     Icon(Icons.Default.Add, contentDescription = "場所を追加")
@@ -57,6 +60,7 @@ fun LocationListScreen(
     }
 }
 
+// 場所リストの1行分のUI。削除ボタンを押すと確認ダイアログを表示する。
 @Composable
 private fun LocationItem(
     location: LocationEntity,
@@ -81,6 +85,7 @@ private fun LocationItem(
         modifier = Modifier.clickable(onClick = onClick)
     )
 
+    // 削除確認ダイアログ。誤操作防止のため削除前に確認を取る。
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
