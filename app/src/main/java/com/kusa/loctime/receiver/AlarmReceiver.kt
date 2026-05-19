@@ -66,8 +66,9 @@ class AlarmReceiver : BroadcastReceiver() {
                     )
                     // 距離が設定半径以内なら通知を表示する
                     if (results[0] <= locationEntity.radiusMeters) {
+                        val timeLabel = "%d:%02d".format(entry.hour, entry.minute)
                         NotificationHelper.showNotification(
-                            context, entryId, locationEntity.name, message
+                            context, entryId, timeLabel, message
                         )
                     }
                 }
