@@ -68,7 +68,7 @@ class AlarmReceiver : BroadcastReceiver() {
                     if (results[0] <= locationEntity.radiusMeters) {
                         val timeLabel = "%d:%02d".format(entry.hour, entry.minute)
                         NotificationHelper.showNotification(
-                            context, entryId, timeLabel, message
+                            context, entryId, message, timeLabel
                         )
                     }
                 }
