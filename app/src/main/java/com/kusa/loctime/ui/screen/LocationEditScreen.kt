@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -33,12 +34,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import kotlin.math.roundToInt
 
-// 場所の追加・編集画面。locationId=-1 なら新規追加、それ以外なら既存の場所を編集する。
-// 画面の構成:
-//   - 場所情報カード（場所名・住所検索・緯度経度・半径・現在地取得）
-//   - 時刻設定セクション（場所情報が入力済みのとき表示）
-//   - 保存ボタン
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationEditScreen(
@@ -46,7 +43,6 @@ fun LocationEditScreen(
     viewModel: MainViewModel,
     onBack: () -> Unit
 ) {
-    // 新規作成時に「+」を押すと場所を自動保存してIDが確定するため、mutableState で管理する
     var currentLocationId by remember { mutableIntStateOf(locationId) }
     val isNew = currentLocationId == -1
     val context = LocalContext.current
@@ -56,25 +52,27 @@ fun LocationEditScreen(
     var lat by remember { mutableStateOf("") }
     var lon by remember { mutableStateOf("") }
     var radius by remember { mutableStateOf("200") }
+    var offsetMinutes by remember { mutableFloatStateOf(0f) }
+    
     var originalName by remember { mutableStateOf("") }
     var originalLat by remember { mutableStateOf("") }
     var originalLon by remember { mutableStateOf("") }
     var originalRadius by remember { mutableStateOf("200") }
+    var originalOffset by remember { mutableIntStateOf(0) }
+    
     var gettingLocation by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
 
-    // 未保存の変更があるかどうか。新規は何か入力していれば dirty、既存は初期値と差分があれば dirty とする。
     val isDirty = if (isNew) {
-        name.isNotBlank() || lat.isNotBlank() || lon.isNotBlank()
+        name.isNotBlank() || lat.isNotBlank() || lon.isNotBlank() || offsetMinutes != 0f
     } else {
-        name != originalName || lat != originalLat || lon != originalLon || radius != originalRadius
+        name != originalName || lat != originalLat || lon != originalLon || radius != originalRadius || offsetMinutes.roundToInt() != originalOffset
     }
+    
     var address by remember { mutableStateOf("") }
     var addressSearching by remember { mutableStateOf(false) }
     var addressError by remember { mutableStateOf("") }
 
-    // 既存の場所の場合、DBから取得した値をフォームに初期表示する。
-    // name.isEmpty() チェックにより、初回のみ読み込んでユーザー入力を上書きしないようにする。
     val locations by viewModel.locations.collectAsState()
     LaunchedEffect(locations) {
         if (!isNew && name.isEmpty()) {
@@ -83,10 +81,13 @@ fun LocationEditScreen(
                 lat = it.latitude.toString()
                 lon = it.longitude.toString()
                 radius = it.radiusMeters.toInt().toString()
+                offsetMinutes = it.offsetMinutes.toFloat()
+                
                 originalName = it.name
                 originalLat = it.latitude.toString()
                 originalLon = it.longitude.toString()
                 originalRadius = it.radiusMeters.toInt().toString()
+                originalOffset = it.offsetMinutes
             }
         }
     }
@@ -99,7 +100,6 @@ fun LocationEditScreen(
         showDiscardDialog = true
     }
 
-    // 入力内容を保存して前の画面に戻る。lat/lon が数値でない場合は何もしない。
     fun saveAndBack() {
         val latD = lat.toDoubleOrNull() ?: return
         val lonD = lon.toDoubleOrNull() ?: return
@@ -109,12 +109,12 @@ fun LocationEditScreen(
             name = name.trim(),
             latitude = latD,
             longitude = lonD,
-            radiusMeters = radF
+            radiusMeters = radF,
+            offsetMinutes = offsetMinutes.roundToInt()
         )
         viewModel.saveLocation(entity) { onBack() }
     }
 
-    // 住所文字列をジオコーダで緯度経度に変換してフォームに反映する。
     fun searchAddress() {
         addressSearching = true
         addressError = ""
@@ -139,7 +139,6 @@ fun LocationEditScreen(
         }
     }
 
-    // FusedLocationProvider でGPS位置情報を取得してフォームに反映する。
     fun fetchCurrentLocation() {
         gettingLocation = true
         scope.launch {
@@ -151,7 +150,6 @@ fun LocationEditScreen(
                 ).await()
                 loc?.let { lat = it.latitude.toString(); lon = it.longitude.toString() }
             } catch (e: SecurityException) {
-                // 権限なし（ここでは無視。権限リクエストは onGetCurrentLocation で行う）
             } finally {
                 gettingLocation = false
             }
@@ -275,6 +273,35 @@ fun LocationEditScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
+                        
+                        // オフセット設定
+                        Column {
+                            val offsetInt = offsetMinutes.roundToInt()
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("オフセット時間", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = if (offsetInt == 0) "オフセットなし" else "${if (offsetInt > 0) "+" else ""}${offsetInt}分",
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = if (offsetInt == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Slider(
+                                value = offsetMinutes,
+                                onValueChange = { offsetMinutes = it },
+                                valueRange = -30f..30f,
+                                steps = 60
+                            )
+                            Text(
+                                "指定時刻の${if (offsetInt < 0) "${-offsetInt}分前" else if (offsetInt > 0) "${offsetInt}分後" else "ちょうど"}に判定を行います",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
                         FilledTonalButton(
                             onClick = { onGetCurrentLocation() },
                             modifier = Modifier.fillMaxWidth(),
@@ -306,19 +333,17 @@ fun LocationEditScreen(
                         FilledTonalIconButton(
                             onClick = {
                                 if (isNew) {
-                                    // 新規場所はIDが未確定のため、時刻追加の前に場所を先に保存する。
-                                    // 保存完了後に currentLocationId を更新し、ダイアログを開く。
                                     val latD = lat.toDoubleOrNull() ?: return@FilledTonalIconButton
                                     val lonD = lon.toDoubleOrNull() ?: return@FilledTonalIconButton
                                     val radF = radius.toFloatOrNull() ?: 200f
-                                    val entity = LocationEntity(0, name.trim(), latD, lonD, radF)
+                                    val entity = LocationEntity(0, name.trim(), latD, lonD, radF, offsetMinutes.roundToInt())
                                     viewModel.saveLocation(entity) { savedId ->
                                         currentLocationId = savedId.toInt()
-                                        // originalXxx を更新して isDirty が false になるようにする
                                         originalName = name
                                         originalLat = lat
                                         originalLon = lon
                                         originalRadius = radius
+                                        originalOffset = offsetMinutes.roundToInt()
                                         editingEntry = null
                                         showTimeDialog = true
                                     }
@@ -394,7 +419,6 @@ fun LocationEditScreen(
     }
 }
 
-// 時刻一覧の1行分のUI。カードをタップすると編集ダイアログが開く。
 @Composable
 private fun TimeEntryItem(
     entry: TimeEntryEntity,
@@ -428,7 +452,6 @@ private fun TimeEntryItem(
     }
 }
 
-// 時刻の追加・編集ダイアログ。entry=null なら新規追加、それ以外なら既存の編集。
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TimeEntryDialog(

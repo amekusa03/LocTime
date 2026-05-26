@@ -44,7 +44,6 @@ fun LocationListScreen(
                         viewModel.updateCurrentLocation()
                         isRefreshing = false 
                     }) {
-                        // Sync は標準ライブラリにないため Refresh を使用
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "現在地を更新"
@@ -108,7 +107,6 @@ private fun EmptyState(padding: PaddingValues) {
                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
                 modifier = Modifier.size(120.dp)
             ) {
-                // Map は標準ライブラリにないため LocationOn を使用
                 Icon(
                     Icons.Default.LocationOn,
                     contentDescription = null,
@@ -181,20 +179,32 @@ private fun LocationCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    SuggestionChip(
-                        onClick = {},
-                        label = { 
-                            Text("半径 ${location.radiusMeters.toInt()}m")
-                        },
-                        icon = {
-                            // Adjust は標準ライブラリにないため Info を使用
-                            Icon(Icons.Default.Info, null, Modifier.size(16.dp))
-                        },
-                        border = null,
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text("半径 ${location.radiusMeters.toInt()}m") },
+                            icon = { Icon(Icons.Default.Info, null, Modifier.size(16.dp)) },
+                            border = null,
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                            )
                         )
-                    )
+                        if (location.offsetMinutes != 0) {
+                            SuggestionChip(
+                                onClick = {},
+                                label = { 
+                                    val off = location.offsetMinutes
+                                    Text("通知: ${if(off > 0) "+" else ""}${off}分") 
+                                },
+                                icon = { Icon(Icons.Default.Notifications, null, Modifier.size(16.dp)) },
+                                border = null,
+                                colors = SuggestionChipDefaults.suggestionChipColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    labelColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
                 }
                 IconButton(
                     onClick = { showConfirm = true },

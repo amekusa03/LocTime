@@ -10,5 +10,6 @@ data class LocationEntity(
     val name: String,          // 場所名（例: 自宅、会社）
     val latitude: Double,      // 緯度
     val longitude: Double,     // 経度
-    val radiusMeters: Float = 1000f // 判定する半径（メートル）。デフォルト1000m
+    val radiusMeters: Float = 1000f, // 判定する半径（メートル）。デフォルト1000m
+    val offsetMinutes: Int = 0 // オフセット時間（分）。-30〜30
 )
