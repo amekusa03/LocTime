@@ -6,7 +6,7 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 背景グラデーション（中央が明るい青、外側が深い紺） -->
+    <!-- 背景グラデーション（中央が明るい緑、外側が深い緑） -->
     <path android:pathData="M0,0H108V108H0Z">
         <aapt:attr name="android:fillColor">
             <gradient
@@ -14,8 +14,8 @@
                 android:centerX="54"
                 android:centerY="54"
                 android:gradientRadius="62"
-                android:startColor="#1E88E5"
-                android:endColor="#0D47A1" />
+                android:startColor="#43A047"
+                android:endColor="#1B5E20" />
         </aapt:attr>
     </path>
 
@@ -28,7 +28,7 @@
                 android:startY="65"
                 android:endX="108"
                 android:endY="108"
-                android:startColor="#0A1565C0"
+                android:startColor="#0A2E7D32"
                 android:endColor="#00000000" />
         </aapt:attr>
     </path>
