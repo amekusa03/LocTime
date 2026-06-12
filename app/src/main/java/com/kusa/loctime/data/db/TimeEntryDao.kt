@@ -15,7 +15,16 @@ interface TimeEntryDao {
     @Query("SELECT * FROM time_entries WHERE id = :id")
     suspend fun getById(id: Int): TimeEntryEntity?
 
-    // 有効な全時刻エントリを取得。端末再起動時のアラーム復元で使用する。
+    // 有効な全時刻エントリとその場所のオフセット時間を取得。端末再起動時のアラーム復元で使用する。
+    @Query("""
+        SELECT t.*, l.offsetMinutes 
+        FROM time_entries t
+        JOIN locations l ON t.locationId = l.id
+        WHERE t.isEnabled = 1
+    """)
+    suspend fun getAllEnabledWithOffset(): List<TimeEntryWithOffset>
+
+    // 有効な全時刻エントリを取得。
     @Query("SELECT * FROM time_entries WHERE isEnabled = 1")
     suspend fun getAllEnabled(): List<TimeEntryEntity>
 
@@ -29,3 +38,8 @@ interface TimeEntryDao {
     @Delete
     suspend fun delete(entry: TimeEntryEntity)
 }
+
+data class TimeEntryWithOffset(
+    @Embedded val entry: TimeEntryEntity,
+    val offsetMinutes: Int
+)

@@ -5,15 +5,17 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.kusa.loctime.data.entity.TimeEntryEntity
 import com.kusa.loctime.receiver.AlarmReceiver
 import java.util.Calendar
 
 // AlarmManager を使って時刻アラームの登録・解除を行うクラス。
 object AlarmScheduler {
+    private const val TAG = "AlarmScheduler"
 
     // オフセットを考慮してアラームを登録する。
-    fun schedule(context: Context, entry: TimeEntryEntity, offsetMinutes: Int = 0) {
+    fun schedule(context: Context, entry: TimeEntryEntity, offsetMinutes: Int) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val pendingIntent = buildIntent(context, entry, offsetMinutes).let {
             PendingIntent.getBroadcast(
@@ -23,8 +25,11 @@ object AlarmScheduler {
         }
         // 本来の時刻からオフセット分を引いた（または足した）時刻に発火させる
         val triggerTime = nextTriggerMillis(entry.hour, entry.minute, offsetMinutes)
+        
+        Log.d(TAG, "Scheduling alarm for entry ${entry.id} at ${triggerTime} (H:${entry.hour}, M:${entry.minute}, offset:${offsetMinutes})")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            Log.w(TAG, "Exact alarm permission not granted, using setAndAllowWhileIdle")
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
         } else {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
@@ -32,6 +37,7 @@ object AlarmScheduler {
     }
 
     fun cancel(context: Context, entry: TimeEntryEntity) {
+        Log.d(TAG, "Canceling alarm for entry ${entry.id}")
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         // キャンセル時は offset は 0 でよい（requestCodeの一致が重要）
         val pendingIntent = PendingIntent.getBroadcast(
@@ -46,7 +52,7 @@ object AlarmScheduler {
             putExtra(AlarmReceiver.EXTRA_ENTRY_ID, entry.id)
             putExtra(AlarmReceiver.EXTRA_LOCATION_ID, entry.locationId)
             putExtra(AlarmReceiver.EXTRA_MESSAGE, entry.message)
-            putExtra("offset_minutes", offsetMinutes)
+            putExtra(AlarmReceiver.EXTRA_OFFSET, offsetMinutes)
         }
 
     private fun nextTriggerMillis(hour: Int, minute: Int, offsetMinutes: Int): Long {

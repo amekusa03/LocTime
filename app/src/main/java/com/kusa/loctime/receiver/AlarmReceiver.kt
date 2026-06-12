@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.location.Location
+import android.util.Log
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -18,6 +19,7 @@ import kotlinx.coroutines.tasks.await
 class AlarmReceiver : BroadcastReceiver() {
 
     companion object {
+        private const val TAG = "AlarmReceiver"
         const val EXTRA_ENTRY_ID = "entry_id"
         const val EXTRA_LOCATION_ID = "location_id"
         const val EXTRA_MESSAGE = "message"
@@ -32,6 +34,8 @@ class AlarmReceiver : BroadcastReceiver() {
         
         if (entryId == -1 || locationId == -1) return
 
+        Log.d(TAG, "Alarm received: entryId=$entryId, locationId=$locationId")
+
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -39,16 +43,20 @@ class AlarmReceiver : BroadcastReceiver() {
                 val locationEntity = db.locationDao().getById(locationId) ?: return@launch
                 val entry = db.timeEntryDao().getById(entryId) ?: return@launch
 
-                if (!entry.isEnabled) return@launch
+                if (!entry.isEnabled) {
+                    Log.d(TAG, "Entry $entryId is disabled, skipping")
+                    return@launch
+                }
 
                 val fusedClient = LocationServices.getFusedLocationProviderClient(context)
                 val currentLocation: Location? = try {
                     val cts = CancellationTokenSource()
                     fusedClient.getCurrentLocation(
-                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        Priority.PRIORITY_HIGH_ACCURACY,
                         cts.token
                     ).await()
                 } catch (e: SecurityException) {
+                    Log.e(TAG, "Location permission missing", e)
                     NotificationHelper.showPermissionNotification(context)
                     null
                 }
@@ -60,12 +68,25 @@ class AlarmReceiver : BroadcastReceiver() {
                         locationEntity.latitude, locationEntity.longitude,
                         results
                     )
-                    if (results[0] <= locationEntity.radiusMeters) {
-                        val timeLabel = "%d:%02d".format(entry.hour, entry.minute)
+                    val distance = results[0]
+                    Log.d(TAG, "Current location: ${currentLocation.latitude},${currentLocation.longitude}, Distance to ${locationEntity.name}: ${distance}m (Radius: ${locationEntity.radiusMeters}m)")
+
+                    if (distance <= locationEntity.radiusMeters) {
+                        val offsetLabel = when {
+                            locationEntity.offsetMinutes < 0 -> "（${-locationEntity.offsetMinutes}分前）"
+                            locationEntity.offsetMinutes > 0 -> "（${locationEntity.offsetMinutes}分後）"
+                            else -> ""
+                        }
+                        val timeLabel = "%d:%02d%s".format(entry.hour, entry.minute, offsetLabel)
+                        Log.i(TAG, "Showing notification for ${locationEntity.name}: $message")
                         NotificationHelper.showNotification(
-                            context, entryId, message, timeLabel
+                            context, entryId, locationEntity.name, "$message $timeLabel"
                         )
+                    } else {
+                        Log.d(TAG, "Out of range, skipping notification")
                     }
+                } else {
+                    Log.w(TAG, "Could not get current location")
                 }
 
                 // 翌日の再スケジュール時にも、その場所の最新のオフセットを適用する

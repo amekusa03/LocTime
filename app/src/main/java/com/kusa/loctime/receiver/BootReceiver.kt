@@ -19,9 +19,9 @@ class BootReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // isEnabled=true の全時刻エントリを取得してアラームを再スケジュールする
-                val entries = AppDatabase.getInstance(context).timeEntryDao().getAllEnabled()
-                entries.forEach { AlarmScheduler.schedule(context, it) }
+                // isEnabled=true の全時刻エントリ（と場所のオフセット）を取得してアラームを再スケジュールする
+                val entries = AppDatabase.getInstance(context).timeEntryDao().getAllEnabledWithOffset()
+                entries.forEach { AlarmScheduler.schedule(context, it.entry, it.offsetMinutes) }
             } finally {
                 pending.finish()
             }

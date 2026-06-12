@@ -54,11 +54,11 @@ object NotificationHelper {
     // 場所・時刻の条件が合致したときに表示する通知。
     // setAutoCancel(true) でタップ時に自動消去。setTimeoutAfter で1分後に自動消去（Android 8.0以上）。
     // 通知ID には timeEntryId を使い、同一エントリの通知が重複しないようにする。
-    fun showNotification(context: Context, id: Int, locationName: String, message: String) {
+    fun showNotification(context: Context, id: Int, title: String, content: String) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setContentTitle(locationName)
-            .setContentText(message)
+            .setContentTitle(title)
+            .setContentText(content)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setTimeoutAfter(60_000L) // 1分後に自動消去（Android 8.0以上のみ有効）

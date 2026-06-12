@@ -1,13 +1,21 @@
 package com.kusa.loctime
 
 import android.Manifest
+import android.app.AlarmManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -43,6 +51,38 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             LocTimeTheme {
+                var showExactAlarmDialog by remember { mutableStateOf(false) }
+
+                // Android 12以上での正確なアラーム権限チェック
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val alarmManager = getSystemService(AlarmManager::class.java)
+                        if (!alarmManager.canScheduleExactAlarms()) {
+                            showExactAlarmDialog = true
+                        }
+                    }
+                }
+
+                if (showExactAlarmDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showExactAlarmDialog = false },
+                        title = { Text("正確なアラームの許可が必要です") },
+                        text = { Text("通知を遅延なく届けるために、設定から「アラームとリマインダー」を許可してください。") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showExactAlarmDialog = false
+                                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                    data = Uri.fromParts("package", packageName, null)
+                                }
+                                startActivity(intent)
+                            }) { Text("設定を開く") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showExactAlarmDialog = false }) { Text("キャンセル") }
+                        }
+                    )
+                }
+
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = "locations") {
                     composable("locations") {
