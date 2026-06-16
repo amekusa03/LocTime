@@ -79,8 +79,12 @@ class AlarmReceiver : BroadcastReceiver() {
                         }
                         val timeLabel = "%d:%02d%s".format(entry.hour, entry.minute, offsetLabel)
                         Log.i(TAG, "Showing notification for ${locationEntity.name}: $message")
+
+                        val title = if (message.isNotBlank()) message else timeLabel
+                        val content = if (message.isNotBlank()) "${locationEntity.name} $timeLabel" else locationEntity.name
+
                         NotificationHelper.showNotification(
-                            context, entryId, locationEntity.name, "$message $timeLabel"
+                            context, entryId, title, content
                         )
                     } else {
                         Log.d(TAG, "Out of range, skipping notification")
