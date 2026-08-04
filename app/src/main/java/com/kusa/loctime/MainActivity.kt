@@ -3,6 +3,7 @@ package com.kusa.loctime
 import android.Manifest
 import android.app.AlarmManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -52,13 +54,27 @@ class MainActivity : ComponentActivity() {
         setContent {
             LocTimeTheme {
                 var showExactAlarmDialog by remember { mutableStateOf(false) }
+                var showBackgroundLocationDialog by remember { mutableStateOf(false) }
 
-                // Android 12以上での正確なアラーム権限チェック
+                // 権限チェック
                 LaunchedEffect(Unit) {
+                    // Android 12以上での正確なアラーム権限チェック
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val alarmManager = getSystemService(AlarmManager::class.java)
                         if (!alarmManager.canScheduleExactAlarms()) {
                             showExactAlarmDialog = true
+                        }
+                    }
+
+                    // Android 10以上でのバックグラウンド位置情報権限チェック
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val hasBackgroundLocation = ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        
+                        if (!hasBackgroundLocation) {
+                            showBackgroundLocationDialog = true
                         }
                     }
                 }
@@ -79,6 +95,26 @@ class MainActivity : ComponentActivity() {
                         },
                         dismissButton = {
                             TextButton(onClick = { showExactAlarmDialog = false }) { Text("キャンセル") }
+                        }
+                    )
+                }
+
+                if (showBackgroundLocationDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showBackgroundLocationDialog = false },
+                        title = { Text("位置情報の「常に許可」が必要です") },
+                        text = { Text("アプリを閉じていてもエリア内判定を行うために、位置情報の権限を「常に許可」に設定してください。") },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showBackgroundLocationDialog = false
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", packageName, null)
+                                }
+                                startActivity(intent)
+                            }) { Text("設定を開く") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showBackgroundLocationDialog = false }) { Text("キャンセル") }
                         }
                     )
                 }

@@ -11,9 +11,7 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.kusa.loctime.data.db.AppDatabase
 import com.kusa.loctime.service.AlarmScheduler
 import com.kusa.loctime.service.NotificationHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 
 class AlarmReceiver : BroadcastReceiver() {
@@ -49,16 +47,43 @@ class AlarmReceiver : BroadcastReceiver() {
                 }
 
                 val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-                val currentLocation: Location? = try {
-                    val cts = CancellationTokenSource()
-                    fusedClient.getCurrentLocation(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        cts.token
-                    ).await()
+                
+                // 位置取得ロジックの改善（リトライと lastLocation の活用）
+                var currentLocation: Location? = null
+                
+                // 1. まずは直近のキャッシュされた位置情報を確認
+                try {
+                    currentLocation = fusedClient.lastLocation.await()
+                    if (currentLocation != null) {
+                        Log.d(TAG, "Using lastLocation: ${currentLocation.latitude},${currentLocation.longitude}")
+                    }
                 } catch (e: SecurityException) {
                     Log.e(TAG, "Location permission missing", e)
                     NotificationHelper.showPermissionNotification(context)
-                    null
+                    return@launch
+                }
+
+                // 2. キャッシュがない、または古い可能性を考慮して最新の位置取得を試みる（最大3回リトライ）
+                var retryCount = 0
+                val maxRetries = 3
+                while (retryCount < maxRetries) {
+                    try {
+                        val cts = CancellationTokenSource()
+                        val freshLocation = fusedClient.getCurrentLocation(
+                            Priority.PRIORITY_HIGH_ACCURACY,
+                            cts.token
+                        ).await()
+                        
+                        if (freshLocation != null) {
+                            currentLocation = freshLocation
+                            Log.d(TAG, "Fetched fresh location: ${currentLocation.latitude},${currentLocation.longitude} (attempt ${retryCount + 1})")
+                            break
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to get fresh location (attempt ${retryCount + 1}): ${e.message}")
+                    }
+                    retryCount++
+                    if (retryCount < maxRetries) delay(2000) // 2秒待ってリトライ
                 }
 
                 if (currentLocation != null) {
