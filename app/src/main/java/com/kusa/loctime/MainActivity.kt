@@ -17,6 +17,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -82,8 +83,8 @@ class MainActivity : ComponentActivity() {
                 if (showExactAlarmDialog) {
                     AlertDialog(
                         onDismissRequest = { showExactAlarmDialog = false },
-                        title = { Text("正確なアラームの許可が必要です") },
-                        text = { Text("通知を遅延なく届けるために、設定から「アラームとリマインダー」を許可してください。") },
+                        title = { Text(stringResource(R.string.dialog_exact_alarm_title)) },
+                        text = { Text(stringResource(R.string.dialog_exact_alarm_message)) },
                         confirmButton = {
                             TextButton(onClick = {
                                 showExactAlarmDialog = false
@@ -91,10 +92,10 @@ class MainActivity : ComponentActivity() {
                                     data = Uri.fromParts("package", packageName, null)
                                 }
                                 startActivity(intent)
-                            }) { Text("設定を開く") }
+                            }) { Text(stringResource(R.string.open_settings)) }
                         },
                         dismissButton = {
-                            TextButton(onClick = { showExactAlarmDialog = false }) { Text("キャンセル") }
+                            TextButton(onClick = { showExactAlarmDialog = false }) { Text(stringResource(R.string.cancel)) }
                         }
                     )
                 }
@@ -102,8 +103,8 @@ class MainActivity : ComponentActivity() {
                 if (showBackgroundLocationDialog) {
                     AlertDialog(
                         onDismissRequest = { showBackgroundLocationDialog = false },
-                        title = { Text("位置情報の「常に許可」が必要です") },
-                        text = { Text("アプリを閉じていてもエリア内判定を行うために、位置情報の権限を「常に許可」に設定してください。") },
+                        title = { Text(stringResource(R.string.dialog_bg_location_title)) },
+                        text = { Text(stringResource(R.string.dialog_bg_location_message)) },
                         confirmButton = {
                             TextButton(onClick = {
                                 showBackgroundLocationDialog = false
@@ -111,10 +112,10 @@ class MainActivity : ComponentActivity() {
                                     data = Uri.fromParts("package", packageName, null)
                                 }
                                 startActivity(intent)
-                            }) { Text("設定を開く") }
+                            }) { Text(stringResource(R.string.open_settings)) }
                         },
                         dismissButton = {
-                            TextButton(onClick = { showBackgroundLocationDialog = false }) { Text("キャンセル") }
+                            TextButton(onClick = { showBackgroundLocationDialog = false }) { Text(stringResource(R.string.cancel)) }
                         }
                     )
                 }

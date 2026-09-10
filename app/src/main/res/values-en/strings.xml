@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">LocTime</string>
+
+    <!-- Permission Dialogs -->
+    <string name="dialog_exact_alarm_title">Exact Alarm Permission Required</string>
+    <string name="dialog_exact_alarm_message">Please allow "Alarms &amp; reminders" in settings to receive notifications without delay.</string>
+    <string name="dialog_bg_location_title">"Allow all the time" Location Permission Required</string>
+    <string name="dialog_bg_location_message">Please set location permission to "Allow all the time" so area checks work even when the app is closed.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="search">Search</string>
+    <string name="back">Back</string>
+
+    <!-- Location List Screen -->
+    <string name="refresh_location">Refresh location</string>
+    <string name="add_location">Add Location</string>
+    <string name="edit_location">Edit Location</string>
+    <string name="empty_locations_title">No locations registered</string>
+    <string name="empty_locations_subtitle">Tap "Add Location" to register one</string>
+    <string name="radius_fmt">Radius %1$dm</string>
+    <string name="notify_fmt">Notify: %1$s%2$d min</string>
+    <string name="in_range">In range</string>
+    <string name="out_of_range">Out of range</string>
+    <string name="distance_fmt">Distance: %.0fm</string>
+    <string name="lat_diff">Lat diff</string>
+    <string name="lng_diff">Lng diff</string>
+    <string name="delete_dialog_title">Delete Location</string>
+    <string name="delete_dialog_message">Are you sure you want to delete "%1$s"?\nThis action cannot be undone.</string>
+
+    <!-- Location Edit Screen -->
+    <string name="location_info">Location Information</string>
+    <string name="location_name">Location Name</string>
+    <string name="address">Address</string>
+    <string name="address_not_found">Address not found</string>
+    <string name="search_failed">Search failed</string>
+    <string name="latitude">Latitude</string>
+    <string name="longitude">Longitude</string>
+    <string name="radius_m">Radius (m)</string>
+    <string name="offset_time">Offset Time</string>
+    <string name="no_offset">No offset</string>
+    <string name="offset_minutes_fmt">%1$s%2$d min</string>
+    <string name="offset_desc_before">Check will run %1$d min before specified time</string>
+    <string name="offset_desc_after">Check will run %1$d min after specified time</string>
+    <string name="offset_desc_exact">Check will run exactly at specified time</string>
+    <string name="get_current_location">Get Current Location</string>
+    <string name="time_settings">Time Settings</string>
+    <string name="add_time">Add Time</string>
+    <string name="edit_time">Edit Time</string>
+    <string name="time_limit_warning">Maximum of 10 time settings allowed</string>
+    <string name="notification_message">Notification Message</string>
+    <string name="discard_dialog_title">Confirmation</string>
+    <string name="discard_dialog_message">Changes are not saved. Discard changes?</string>
+
+    <!-- Notifications & Receiver -->
+    <string name="perm_notif_title">Location permission required</string>
+    <string name="perm_notif_content">Tap to set location permission</string>
+    <string name="offset_tag_before"> (%1$d min before)</string>
+    <string name="offset_tag_after"> (%1$d min after)</string>
+</resources>

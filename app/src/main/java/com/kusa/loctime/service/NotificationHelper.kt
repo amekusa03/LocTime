@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
+import com.kusa.loctime.R
 
 // 通知チャンネルの作成と通知の表示を担うヘルパーオブジェクト。
 object NotificationHelper {
@@ -41,8 +42,8 @@ object NotificationHelper {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentTitle("位置情報の権限が必要です")
-            .setContentText("タップして権限を設定してください")
+            .setContentTitle(context.getString(R.string.perm_notif_title))
+            .setContentText(context.getString(R.string.perm_notif_content))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

@@ -8,6 +8,7 @@ import android.util.Log
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.kusa.loctime.R
 import com.kusa.loctime.data.db.AppDatabase
 import com.kusa.loctime.service.AlarmScheduler
 import com.kusa.loctime.service.NotificationHelper
@@ -98,8 +99,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
                     if (distance <= locationEntity.radiusMeters) {
                         val offsetLabel = when {
-                            locationEntity.offsetMinutes < 0 -> "（${-locationEntity.offsetMinutes}分前）"
-                            locationEntity.offsetMinutes > 0 -> "（${locationEntity.offsetMinutes}分後）"
+                            locationEntity.offsetMinutes < 0 -> context.getString(R.string.offset_tag_before, -locationEntity.offsetMinutes)
+                            locationEntity.offsetMinutes > 0 -> context.getString(R.string.offset_tag_after, locationEntity.offsetMinutes)
                             else -> ""
                         }
                         val timeLabel = "%d:%02d%s".format(entry.hour, entry.minute, offsetLabel)

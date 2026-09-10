@@ -1,48 +1,50 @@
 # LocTime
 
-あらかじめ設定した場所と時間で、その場所にいるかどうかを判定し通知を表示するAndroidアプリです。
-「出勤時間の1分前には職場にいたい」といった、場所と時間に紐づく行動をサポートします。
+[日本語版 README](README.ja.md)
 
-## 機能
+LocTime is an Android application that checks whether you are at a specified location at scheduled times and sends notifications accordingly.
+It supports location- and time-based routines, such as "I want to be at my office 1 minute before work starts."
 
-- **場所の登録**: 最大10件まで登録可能。
-- **時刻設定**: 1つの場所につき最大10件まで設定可能。
-- **通知メッセージ**: 時刻ごとに異なるテキストを設定可能。
-- **オフセット機能**: 場所ごとに判定タイミングを調整（-30分〜+30分）。
-  - 例：職場に「-1分」設定で、本来の時刻の1分前に判定を実行。
-- **リアルタイム判定**: 一覧画面で現在地と登録場所の距離や「範囲内/外」を視覚的に表示。
-- **自動復元**: 端末再起動後も設定したアラームを自動的に再登録。
+## Features
 
-## 場所の設定方法
+- **Location Management**: Register up to 10 locations.
+- **Schedule Settings**: Set up to 10 scheduled times per location.
+- **Custom Notifications**: Customize notification messages for each scheduled time.
+- **Offset Adjustment**: Fine-tune trigger timing for each location (-30 minutes to +30 minutes).
+  - Example: Set "-1 minute" for work to trigger the location check 1 minute prior to the scheduled time.
+- **Real-time Status**: Visually check current distance, coordinates difference, and "In Range / Out of Range" status on the main list screen.
+- **Auto Restore**: Automatically re-schedules alarms upon device reboot.
 
-| 方法 | 説明 |
+## How to Set Locations
+
+| Method | Description |
 |---|---|
-| 住所検索 | 住所を入力して検索（`Geocoder` を使用） |
-| 現在地取得 | GPSを使用して現在地の緯度・経度を自動入力 |
-| 手動入力 | 緯度・経度、判定半径（m）を直接入力 |
+| Address Search | Search by address using `Geocoder` |
+| Get Current Location | Automatically fetch latitude & longitude via GPS |
+| Manual Input | Manually enter latitude, longitude, and radius (m) |
 
-## 動作フロー
+## Workflow
 
-1. 設定された「時刻 ＋ オフセット時間」になると、バックグラウンドでアラームが発火します。
-2. その瞬間にGPS位置情報を取得し、登録済みの場所の範囲内（半径Nm）にいるか判定します。
-3. 範囲内にいる場合のみ、指定されたメッセージで通知を表示します。
-4. 常時GPSを監視しない（時刻ベースの起動）ため、バッテリー消費を最小限に抑えられます。
+1. At the scheduled "Time + Offset", a background alarm triggers.
+2. At that precise moment, GPS location is retrieved to check if you are within the designated location radius.
+3. If you are within range, a notification is displayed with your specified message.
+4. Battery consumption is minimized because GPS is not constantly running in the background (time-triggered execution).
 
-※ 正確な動作のため、位置情報権限は「常に許可」、バッテリー設定は「制限なし」を推奨します。
+*Note: For optimal performance, location permission should be set to "Allow all the time" and battery usage to "Unrestricted".*
 
-## 技術構成
+## Tech Stack
 
-| 項目 | 内容 |
+| Item | Details |
 |---|---|
-| 対象OS | Android 8.0 (API 26) 以上 |
-| 言語 | Kotlin |
-| アーキテクチャ | MVVM (ViewModel + Repository) |
+| Target OS | Android 8.0 (API 26) or higher |
+| Language | Kotlin |
+| Architecture | MVVM (ViewModel + Repository) |
 | UI | Jetpack Compose / Material3 |
-| データベース | Room |
-| 位置情報 | FusedLocationProviderClient (Google Play Services) |
-| 非同期処理 | Coroutines / Flow |
-| ナビゲーション | Navigation Compose |
+| Database | Room |
+| Location | FusedLocationProviderClient (Google Play Services) |
+| Async | Coroutines / Flow |
+| Navigation | Navigation Compose |
 
-## ライセンス
+## License
 
 MIT License

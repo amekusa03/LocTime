@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.kusa.loctime.R
 import com.kusa.loctime.data.entity.LocationEntity
 import com.kusa.loctime.data.entity.TimeEntryEntity
 import com.kusa.loctime.ui.viewmodel.MainViewModel
@@ -129,10 +131,10 @@ fun LocationEditScreen(
                     lat = results[0].latitude.toString()
                     lon = results[0].longitude.toString()
                 } else {
-                    addressError = "住所が見つかりませんでした"
+                    addressError = context.getString(R.string.address_not_found)
                 }
             } catch (e: Exception) {
-                addressError = "検索に失敗しました"
+                addressError = context.getString(R.string.search_failed)
             } finally {
                 addressSearching = false
             }
@@ -179,12 +181,12 @@ fun LocationEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) "場所を追加" else "場所を編集") },
+                title = { Text(if (isNew) stringResource(R.string.add_location) else stringResource(R.string.edit_location)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (isDirty) showDiscardDialog = true else onBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -200,7 +202,7 @@ fun LocationEditScreen(
         ) {
             item {
                 Text(
-                    "場所情報",
+                    stringResource(R.string.location_info),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -213,7 +215,7 @@ fun LocationEditScreen(
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text("場所名") },
+                            label = { Text(stringResource(R.string.location_name)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
@@ -224,7 +226,7 @@ fun LocationEditScreen(
                             OutlinedTextField(
                                 value = address,
                                 onValueChange = { address = it; addressError = "" },
-                                label = { Text("住所") },
+                                label = { Text(stringResource(R.string.address)) },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
                                 isError = addressError.isNotEmpty()
@@ -236,7 +238,7 @@ fun LocationEditScreen(
                                 if (addressSearching) {
                                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                                 } else {
-                                    Text("検索")
+                                    Text(stringResource(R.string.search))
                                 }
                             }
                         }
@@ -251,7 +253,7 @@ fun LocationEditScreen(
                             OutlinedTextField(
                                 value = lat,
                                 onValueChange = { lat = it },
-                                label = { Text("緯度") },
+                                label = { Text(stringResource(R.string.latitude)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
                                 singleLine = true
@@ -259,7 +261,7 @@ fun LocationEditScreen(
                             OutlinedTextField(
                                 value = lon,
                                 onValueChange = { lon = it },
-                                label = { Text("経度") },
+                                label = { Text(stringResource(R.string.longitude)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f),
                                 singleLine = true
@@ -268,7 +270,7 @@ fun LocationEditScreen(
                         OutlinedTextField(
                             value = radius,
                             onValueChange = { radius = it },
-                            label = { Text("半径 (m)") },
+                            label = { Text(stringResource(R.string.radius_m)) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
@@ -282,9 +284,9 @@ fun LocationEditScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("オフセット時間", style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.offset_time), style = MaterialTheme.typography.bodyMedium)
                                 Text(
-                                    text = if (offsetInt == 0) "オフセットなし" else "${if (offsetInt > 0) "+" else ""}${offsetInt}分",
+                                    text = if (offsetInt == 0) stringResource(R.string.no_offset) else stringResource(R.string.offset_minutes_fmt, if (offsetInt > 0) "+" else "", offsetInt),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                     color = if (offsetInt == 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
                                 )
@@ -296,7 +298,7 @@ fun LocationEditScreen(
                                 steps = 60
                             )
                             Text(
-                                "指定時刻の${if (offsetInt < 0) "${-offsetInt}分前" else if (offsetInt > 0) "${offsetInt}分後" else "ちょうど"}に判定を行います",
+                                if (offsetInt < 0) stringResource(R.string.offset_desc_before, -offsetInt) else if (offsetInt > 0) stringResource(R.string.offset_desc_after, offsetInt) else stringResource(R.string.offset_desc_exact),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -311,7 +313,7 @@ fun LocationEditScreen(
                                 CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                                 Spacer(Modifier.width(8.dp))
                             }
-                            Text("現在地を取得")
+                            Text(stringResource(R.string.get_current_location))
                         }
                     }
                 }
@@ -325,7 +327,7 @@ fun LocationEditScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            "時刻設定",
+                            stringResource(R.string.time_settings),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
@@ -354,12 +356,12 @@ fun LocationEditScreen(
                             },
                             enabled = timeEntries.size < 10
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "時刻を追加")
+                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_time))
                         }
                     }
                     if (timeEntries.size >= 10) {
                         Text(
-                            "時刻は最大10件まで",
+                            stringResource(R.string.time_limit_warning),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -385,7 +387,7 @@ fun LocationEditScreen(
                         onClick = { saveAndBack() },
                         enabled = name.isNotBlank() && lat.isNotBlank() && lon.isNotBlank()
                     ) {
-                        Text("保存")
+                        Text(stringResource(R.string.save))
                     }
                 }
             }
@@ -407,13 +409,13 @@ fun LocationEditScreen(
     if (showDiscardDialog) {
         AlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            title = { Text("確認") },
-            text = { Text("保存されていません。設定値を破棄しますか？") },
+            title = { Text(stringResource(R.string.discard_dialog_title)) },
+            text = { Text(stringResource(R.string.discard_dialog_message)) },
             confirmButton = {
-                TextButton(onClick = { showDiscardDialog = false; onBack() }) { Text("OK") }
+                TextButton(onClick = { showDiscardDialog = false; onBack() }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardDialog = false }) { Text("いいえ") }
+                TextButton(onClick = { showDiscardDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }
@@ -446,7 +448,7 @@ private fun TimeEntryItem(
             }
             Switch(checked = entry.isEnabled, onCheckedChange = { onToggle() })
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "削除")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
             }
         }
     }
@@ -469,14 +471,14 @@ private fun TimeEntryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (entry == null) "時刻を追加" else "時刻を編集") },
+        title = { Text(if (entry == null) stringResource(R.string.add_time) else stringResource(R.string.edit_time)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 TimeInput(state = timePickerState)
                 OutlinedTextField(
                     value = message,
                     onValueChange = { message = it },
-                    label = { Text("通知メッセージ") },
+                    label = { Text(stringResource(R.string.notification_message)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -494,10 +496,10 @@ private fun TimeEntryDialog(
                         isEnabled = entry?.isEnabled ?: true
                     )
                 )
-            }) { Text("保存") }
+            }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

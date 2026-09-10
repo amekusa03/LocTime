@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.kusa.loctime"
     compileSdk = 36
+    buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "com.kusa.loctime"

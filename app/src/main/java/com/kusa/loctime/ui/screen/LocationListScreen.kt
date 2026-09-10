@@ -13,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kusa.loctime.R
 import com.kusa.loctime.data.entity.LocationEntity
 import com.kusa.loctime.ui.viewmodel.MainViewModel
 
@@ -46,7 +48,7 @@ fun LocationListScreen(
                     }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "現在地を更新"
+                            contentDescription = stringResource(R.string.refresh_location)
                         )
                     }
                 },
@@ -65,7 +67,7 @@ fun LocationListScreen(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("場所を追加")
+                    Text(stringResource(R.string.add_location))
                 }
             }
         }
@@ -116,12 +118,12 @@ private fun EmptyState(padding: PaddingValues) {
             }
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                "登録された場所がありません",
+                stringResource(R.string.empty_locations_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                "「場所を追加」から登録してください",
+                stringResource(R.string.empty_locations_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -182,7 +184,7 @@ private fun LocationCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         SuggestionChip(
                             onClick = {},
-                            label = { Text("半径 ${location.radiusMeters.toInt()}m") },
+                            label = { Text(stringResource(R.string.radius_fmt, location.radiusMeters.toInt())) },
                             icon = { Icon(Icons.Default.Info, null, Modifier.size(16.dp)) },
                             border = null,
                             colors = SuggestionChipDefaults.suggestionChipColors(
@@ -194,7 +196,7 @@ private fun LocationCard(
                                 onClick = {},
                                 label = { 
                                     val off = location.offsetMinutes
-                                    Text("通知: ${if(off > 0) "+" else ""}${off}分") 
+                                    Text(stringResource(R.string.notify_fmt, if(off > 0) "+" else "", off)) 
                                 },
                                 icon = { Icon(Icons.Default.Notifications, null, Modifier.size(16.dp)) },
                                 border = null,
@@ -212,7 +214,7 @@ private fun LocationCard(
                         contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                     )
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "削除")
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                 }
             }
 
@@ -246,12 +248,12 @@ private fun LocationCard(
                             
                             Column {
                                 Text(
-                                    text = if (isInRange) "範囲内です" else "範囲外です",
+                                    text = if (isInRange) stringResource(R.string.in_range) else stringResource(R.string.out_of_range),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = if (isInRange) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "距離: %.0fm".format(results ?: 0f),
+                                    text = stringResource(R.string.distance_fmt, results ?: 0f),
                                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -265,12 +267,12 @@ private fun LocationCard(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             DiffInfoBox(
-                                label = "緯度差",
+                                label = stringResource(R.string.lat_diff),
                                 value = "%+.6f".format(latDiff),
                                 modifier = Modifier.weight(1f)
                             )
                             DiffInfoBox(
-                                label = "経度差",
+                                label = stringResource(R.string.lng_diff),
                                 value = "%+.6f".format(lngDiff),
                                 modifier = Modifier.weight(1f)
                             )
@@ -284,18 +286,18 @@ private fun LocationCard(
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
-            title = { Text("場所の削除") },
-            text = { Text("「${location.name}」を削除してもよろしいですか？\nこの操作は取り消せません。") },
+            title = { Text(stringResource(R.string.delete_dialog_title)) },
+            text = { Text(stringResource(R.string.delete_dialog_message, location.name)) },
             confirmButton = {
                 Button(
                     onClick = { onDelete(); showConfirm = false },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("削除")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirm = false }) { Text("キャンセル") }
+                TextButton(onClick = { showConfirm = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

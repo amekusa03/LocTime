@@ -1,3 +1,62 @@
 <resources>
     <string name="app_name">LocTime</string>
+
+    <!-- Permission Dialogs -->
+    <string name="dialog_exact_alarm_title">正確なアラームの許可が必要です</string>
+    <string name="dialog_exact_alarm_message">通知を遅延なく届けるために、設定から「アラームとリマインダー」を許可してください。</string>
+    <string name="dialog_bg_location_title">位置情報の「常に許可」が必要です</string>
+    <string name="dialog_bg_location_message">アプリを閉じていてもエリア内判定を行うために、位置情報の権限を「常に許可」に設定してください。</string>
+    <string name="open_settings">設定を開く</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+    <string name="delete">削除</string>
+    <string name="save">保存</string>
+    <string name="search">検索</string>
+    <string name="back">戻る</string>
+
+    <!-- Location List Screen -->
+    <string name="refresh_location">現在地を更新</string>
+    <string name="add_location">場所を追加</string>
+    <string name="edit_location">場所を編集</string>
+    <string name="empty_locations_title">登録された場所がありません</string>
+    <string name="empty_locations_subtitle">「場所を追加」から登録してください</string>
+    <string name="radius_fmt">半径 %1$dm</string>
+    <string name="notify_fmt">通知: %1$s%2$d分</string>
+    <string name="in_range">範囲内です</string>
+    <string name="out_of_range">範囲外です</string>
+    <string name="distance_fmt">距離: %.0fm</string>
+    <string name="lat_diff">緯度差</string>
+    <string name="lng_diff">経度差</string>
+    <string name="delete_dialog_title">場所の削除</string>
+    <string name="delete_dialog_message">「%1$s」を削除してもよろしいですか？\nこの操作は取り消せません。</string>
+
+    <!-- Location Edit Screen -->
+    <string name="location_info">場所情報</string>
+    <string name="location_name">場所名</string>
+    <string name="address">住所</string>
+    <string name="address_not_found">住所が見つかりませんでした</string>
+    <string name="search_failed">検索に失敗しました</string>
+    <string name="latitude">緯度</string>
+    <string name="longitude">経度</string>
+    <string name="radius_m">半径 (m)</string>
+    <string name="offset_time">オフセット時間</string>
+    <string name="no_offset">オフセットなし</string>
+    <string name="offset_minutes_fmt">%1$s%2$d分</string>
+    <string name="offset_desc_before">指定時刻の%1$d分前に判定を行います</string>
+    <string name="offset_desc_after">指定時刻の%1$d分後に判定を行います</string>
+    <string name="offset_desc_exact">指定時刻のちょうどに判定を行います</string>
+    <string name="get_current_location">現在地を取得</string>
+    <string name="time_settings">時刻設定</string>
+    <string name="add_time">時刻を追加</string>
+    <string name="edit_time">時刻を編集</string>
+    <string name="time_limit_warning">時刻は最大10件まで</string>
+    <string name="notification_message">通知メッセージ</string>
+    <string name="discard_dialog_title">確認</string>
+    <string name="discard_dialog_message">保存されていません。設定値を破棄しますか？</string>
+
+    <!-- Notifications & Receiver -->
+    <string name="perm_notif_title">位置情報の権限が必要です</string>
+    <string name="perm_notif_content">タップして権限を設定してください</string>
+    <string name="offset_tag_before">（%1$d分前）</string>
+    <string name="offset_tag_after">（%1$d分後）</string>
 </resources>
